@@ -9,13 +9,13 @@
 
 // Some shape (equalateral triangle)
 GLfloat vertices[] =
-{
-    -0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f, // lower left corner
-    0.5f, -0.5f * float(sqrt(3)) / 3, 0.0f,  // lower right corner
-    0.0f, 0.5f * float(sqrt(3)) * 2 / 3, 0.0f, // top
-    -0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f, // inner left
-    0.5f / 2, 0.5f * float(sqrt(3)) / 6, 0.0f,  // inner right
-    0.0f, -0.5f * float(sqrt(3)) / 3, 0.0f, // inner bottom
+{   // COORDINATES                                  // COLOURS
+    -0.5f, -0.5f * float(sqrt(3)) / 3,     0.0f,    0.8f, 0.3f,  0.02f, // lower left corner
+     0.5f, -0.5f * float(sqrt(3)) / 3,     0.0f,    0.8f, 0.3f,  0.02f, // lower right corner
+     0.0f,  0.5f * float(sqrt(3)) * 2 / 3, 0.0f,    1.0f, 0.6f,  0.32f, // top
+    -0.25f, 0.5f * float(sqrt(3)) / 6,     0.0f,    0.9f, 0.45f, 0.17f, // inner left
+     0.25f, 0.5f * float(sqrt(3)) / 6,     0.0f,    0.9f, 0.45f, 0.17f, // inner right
+     0.0f, -0.5f * float(sqrt(3)) / 3,     0.0f,    0.8f, 0.3f,  0.02f, // inner bottom
 };
 
 GLuint indices[] =
@@ -66,12 +66,17 @@ int main()
     // Generate Element Buffer Object links it to indices
     EBO ebo1(indices, sizeof(indices));
 
-    // Link VBO to VAO
-    vao1.LinkVBO(vbo1, 0);
+    // Links coordinates to VAO
+    vao1.LinkAttrib(vbo1, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0);
+    // Links colours to VAO
+    vao1.LinkAttrib(vbo1, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     // Unbind all objects so we dont accdently modify the VAO/VBO we created
     vao1.Unbind();
     vbo1.Unbind();
     ebo1.Unbind();
+
+    // Gets ID of uniform called "scale"
+    GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
 
     // Main while loop
     while (!glfwWindowShouldClose(window))
@@ -82,6 +87,8 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
         // Tell OpenGL the Shader Program we're using
         shaderProgram.Activate();
+        // Assigns a value to the uniform (can only be done after the shader program is activated)
+        glUniform1f(uniID, 0.5f);
         // Bind VAO so OpenGL knows about it
         vao1.Bind();
         // Draws a triangle using the Triangle promitive
