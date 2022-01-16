@@ -11,6 +11,8 @@
 #include "VAO.h"
 #include "VBO.h"
 #include "EBO.h"
+#include "Camera.h"
+
 
 // Some shape (equalateral triangle)
 GLfloat vertices[] =
@@ -86,19 +88,14 @@ int main()
     vbo1.Unbind();
     ebo1.Unbind();
 
-    // Gets ID of uniform called "scale"
-    GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
-
     // Texture
     Texture brickTex("brick.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
     brickTex.textUnit(shaderProgram, "tex0", 0);
 
-    // simple timer and accumulator for rotating he pyramid
-    float rotation = 0.0f;
-    double prevTime = glfwGetTime();
-
     // Enables the Depth Buffer
     glEnable(GL_DEPTH_TEST);
+
+    Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
 
     // Main while loop
     while (!glfwWindowShouldClose(window))
@@ -110,35 +107,12 @@ int main()
         // Tell OpenGL the Shader Program we're using
         shaderProgram.Activate();
 
-        // check if the pyramid should rotate (60Hz)
-        double crntTime = glfwGetTime();
-        if (crntTime - prevTime >= 1.0 / 60)
-        {
-            rotation += 0.5f;
-            prevTime = crntTime;
-        }
+        // handle mouse & keyboard inputs
+        camera.Inputs(window);
+        // update and send camera matrix to vertex shader
+        camera.Matrix(45.0, 0.1f, 100.0f, shaderProgram, "camMatrix");
 
-        // Init matrices
-        glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view  = glm::mat4(1.0f);
-        glm::mat4 proj  = glm::mat4(1.0f);
 
-        // Assign various tranformations
-        model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 1.0, 0.0f));
-        view = glm::translate(view, glm::vec3(0, -0.5f, -2.0f));
-        // set camera angle, aspect ratio, and field of view
-        proj = glm::perspective(glm::radians(45.0f), (float)(width/ height), 0.1f, 100.0f);
-
-        // Inputs the matrices into the Vertex Shader
-        int modelLoc = glGetUniformLocation(shaderProgram.ID, "model");
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        int viewLoc = glGetUniformLocation(shaderProgram.ID, "view");
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        int projLoc = glGetUniformLocation(shaderProgram.ID, "proj");
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
-
-        // Assigns a value to the uniform (can only be done after the shader program is activated)
-        glUniform1f(uniID, 0.5f);
         // Binds texture so it renders
         brickTex.Bind();
         // Bind VAO so OpenGL knows about it
