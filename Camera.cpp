@@ -8,7 +8,7 @@ Camera::Camera(int w, int h, glm::vec3 pos)
 	Position = pos;
 }
 
-void Camera::Matrix(float FOVdeg, float nearPlane, float farPlane, Shader& shader, const char* uniform)
+void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane)
 {
 	// init matrix
 	auto view = glm::mat4(1.0f);
@@ -19,8 +19,13 @@ void Camera::Matrix(float FOVdeg, float nearPlane, float farPlane, Shader& shade
 	// Adds perspective to the scene
 	projection = glm::perspective(glm::radians(FOVdeg), (float)(width / height), nearPlane, farPlane);
 
+	cameraMatrix = projection * view;
+}
+
+void Camera::Matrix(Shader& shader, const char* uniform)
+{
 	// Send to vertex shader
-	glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(projection * view));
+	glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
 void Camera::Inputs(GLFWwindow* window)
@@ -53,11 +58,11 @@ void Camera::Inputs(GLFWwindow* window)
 	// Changes camera move speed
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 	{
-		speed = 0.004f;
+		speed = 0.4f;
 	}
 	else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
 	{
-		speed = 0.001f;
+		speed = 0.1f;
 	}
 
 	// Changes camera angle
@@ -67,7 +72,7 @@ void Camera::Inputs(GLFWwindow* window)
 
 		if (firstClick)
 		{
-			glfwSetCursorPos(window, (width / 2.0), (height / 2.0));
+			glfwSetCursorPos(window, width / 2, height / 2);
 			firstClick = false;
 		}
 
@@ -78,8 +83,8 @@ void Camera::Inputs(GLFWwindow* window)
 
 		// normalises the coordinates to begin at the centre of the screen
 		// then *transforms* them into degrees
-		float rotX = sensitivity * ((float)mouseY - (height / 2.0f)) / height;
-		float rotY = sensitivity * ((float)mouseX - (height / 2.0f)) / height;
+		float rotX = sensitivity * (float)(mouseY - (height / 2)) / height;
+		float rotY = sensitivity * (float)(mouseX - (width  / 2)) / width;
 
 		// calculate vertical change
 		glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotX), glm::normalize(glm::cross(Orientation, Up)));
@@ -94,7 +99,7 @@ void Camera::Inputs(GLFWwindow* window)
 		Orientation = glm::rotate(Orientation, glm::radians(-rotY), Up);
 
 		// Sets mouse cursor to the middle of the screen so that it doesn't end up roaming around
-		glfwSetCursorPos(window, (width / 2.0), (height / 2.0));
+		glfwSetCursorPos(window, width / 2, height / 2);
 	}
 	else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
 	{
